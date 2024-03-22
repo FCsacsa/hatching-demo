@@ -46,13 +46,14 @@ def draw_stroke(img, stroke: Tuple[float, float, float], rotated = False) -> np.
     
     size = (stroke_length, stroke_texture.shape[0])
     resized_stroke = cv2.resize(stroke_texture, size, interpolation=cv2.INTER_LINEAR)
-    resized_stroke = np.pad(resized_stroke, ((0, width - resized_stroke.shape[0]), (0, height - resized_stroke.shape[1]), (0,0)), 'constant', constant_values=(1,1))
+    resized_stroke = np.pad(resized_stroke, ((0, width - resized_stroke.shape[0]), (0, height - resized_stroke.shape[1]), (0,0)), 'constant', constant_values=(255, 255))
     if rotated:
-        resized_stroke = resized_stroke.T
+        resized_stroke = resized_stroke.transpose((1, 0, 2))
     resized_stroke = np.roll(resized_stroke, stroke_x, axis=0)
     resized_stroke = np.roll(resized_stroke, stroke_y, axis=1)
-    img *= resized_stroke
-    return img
+    np.minimum(img, resized_stroke, out=img)
+    #img //= 255
+    # return img
     # for i in range(resized_stroke.shape[0]):
     #     for j in range(resized_stroke.shape[1]):
     #         if rotated:
@@ -87,7 +88,7 @@ def compute_goodness(imgs: List[np.array], stroke: Tuple[float, float, float], p
             tone_sum += get_tone(img) - pre_tone[i]
             img = cv2.pyrDown(img)
     tone_sum /= stroke[2]
-    return tone_sum
+    return -tone_sum
 
 
 def copy_imgs(imgs: List[np.array]) -> List[np.array]:
@@ -133,24 +134,23 @@ def reach_tone(imgs: List[np.array], tone: float):
             print(f"current_tone: {current_tone}")
 
 
-img = create_texture(TEXTURE_SIZE)
-img = draw_stroke(img, (0.9, 0.1, 0.5))
-img = draw_stroke(img, (0.9, 0.13, 0.5))
-cv2.imwrite("test.png", img)
+# img = create_texture(TEXTURE_SIZE)
+# img = draw_stroke(img, (0.9, 0.1, 0.5))
+# img = draw_stroke(img, (0.9, 0.13, 0.5))
+# cv2.imwrite("test.png", img)
 
 
 
-# if __name__ == '__main__':
-#     # Generate different LOD texture levels...
-#     imgs = []
-#     for i in range(TEXTURE_LEVELS):
-#         imgs.insert(0, create_texture(TEXTURE_SIZE // 2**i))
-    
-#     # Generate each tone level...
-#     for i in range(1, TONE_LEVELS+1):
-#         target_tone = 1 - i * TONE_STEP
-#         print(f'Generating image texture {target_tone}')
-#         reach_tone(imgs, target_tone)
-#         for (x, img) in enumerate(imgs):
-#             cv2.imwrite(f'textures/tone{i}-{x}.png', img)
-#         print("Finnish tone: ", target_tone)
+if __name__ == '__main__':
+    # Generate different LOD texture levels...
+    imgs = []
+    for i in range(TEXTURE_LEVELS):
+        imgs.insert(0, create_texture(TEXTURE_SIZE // 2**i))
+    # Generate each tone level...
+    for i in range(1, TONE_LEVELS+1):
+        target_tone = 1 - i * TONE_STEP
+        print(f'Generating image texture {target_tone}')
+        reach_tone(imgs, target_tone)
+        for (x, img) in enumerate(imgs):
+            cv2.imwrite(f'textures/tone{i}-{x}.png', img)
+        print("Finnish tone: ", target_tone)
