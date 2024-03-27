@@ -2,19 +2,23 @@ import cv2
 import numpy as np
 import random
 from typing import List, Tuple
+from scipy.ndimage import rotate
 from PIL import Image
 
 # How many tone levels should be generated?
 TONE_LEVELS = 6
-
 TONE_STEP = 1/TONE_LEVELS
+
+MIN_CANDIDATES = 100
+MAX_CANDIDATES = 1000
 
 PYRAMID_MIN_LEVEL = 1
 K_SIZE = (9, 9)
 
+ROT_DEG = 2
+
 # In pixels; how big should the largest texture level be?
 TEXTURE_SIZE = 256
-
 TEXTURE_LEVELS = 4
 
 stroke_texture = cv2.imread('stroke.png')
@@ -45,10 +49,12 @@ def draw_stroke(img, stroke: Tuple[float, float, float], rotated = False) -> np.
     
     size = (stroke_length, stroke_texture.shape[0])
     resized_stroke = cv2.resize(stroke_texture, size, interpolation=cv2.INTER_LINEAR)
+    resized_stroke = rotate(resized_stroke, random.uniform(-ROT_DEG, ROT_DEG), mode="constant", cval=255, reshape=True, order=1)
     resized_stroke = np.pad(resized_stroke, ((0, width - resized_stroke.shape[0]), (0, height - resized_stroke.shape[1]), (0,0)), 'constant', constant_values=(255, 255))
     if rotated:
         resized_stroke = resized_stroke.transpose((1, 0, 2))
-    # TODO: Add support for random jitter in the rotation of the stroke.
+    resized_stroke = np.roll(resized_stroke, int( resized_stroke.shape[0]/2 ), axis=0)
+    resized_stroke = np.roll(resized_stroke, int( resized_stroke.shape[1]/2 ), axis=1)
     resized_stroke = np.roll(resized_stroke, stroke_x, axis=0)
     resized_stroke = np.roll(resized_stroke, stroke_y, axis=1)
     np.minimum(img, resized_stroke, out=img)
@@ -128,7 +134,8 @@ def reach_tone(imgs: List[np.array], tone: float):
         current_tone = get_tone(img)
         while current_tone > tone:
             current_tone = get_tone(img)
-            add_stroke(imgs[i:], 100, tone < 0.5)
+            candidates = MIN_CANDIDATES + (MAX_CANDIDATES - MIN_CANDIDATES) * (current_tone - tone) / current_tone
+            add_stroke(imgs[i:], int(candidates), tone < 0.5)
             print(f"current_tone: {current_tone}")
 
 
