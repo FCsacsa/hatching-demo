@@ -147,7 +147,7 @@ if __name__ == '__main__':
     for i in range(TEXTURE_LEVELS):
         imgs.insert(0, create_texture(TEXTURE_SIZE // 2**i))
     # Generate each tone level...
-    for i in range(1, TONE_LEVELS+1):
+    for i in range(1, TONE_LEVELS):
         target_tone = 1 - i * TONE_STEP
         print(f'Generating image texture {target_tone}')
         reach_tone(imgs, target_tone)
