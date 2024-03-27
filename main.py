@@ -24,6 +24,7 @@ stroke_img = Image.open('stroke.png')
 def create_texture(size: int) -> np.array:
     """
     Creates an empty (==fully white) image texture of the given dimensions.
+    @param size: The side length of the texture.
     """
     image = np.zeros((size,size,3), np.uint8)
     image[:,] = (255,255,255)
@@ -33,38 +34,24 @@ def create_texture(size: int) -> np.array:
 def draw_stroke(img, stroke: Tuple[float, float, float], rotated = False) -> np.array:
     """
     Takes in a single image and draws a new stroke on it.
+    @param img: The image to draw the stroke to.
+    @param stroke: The stroke to draw.
+    @param rotated: Whether the stroke should be rotated.
     """
     (width, height, _) = img.shape
     stroke_length = int(stroke[2] * width)
     stroke_x = int(stroke[0] * width)
     stroke_y = int(stroke[1] * height)
-    # im = Image.fromarray(img)
-    # im.paste(stroke_img, (stroke_x, stroke_y))
-    # if stroke_x + stroke_length > width:
-    #     im.paste(stroke_img, (stroke_x-width, stroke_y))
-    # return np. array(im)
     
     size = (stroke_length, stroke_texture.shape[0])
     resized_stroke = cv2.resize(stroke_texture, size, interpolation=cv2.INTER_LINEAR)
     resized_stroke = np.pad(resized_stroke, ((0, width - resized_stroke.shape[0]), (0, height - resized_stroke.shape[1]), (0,0)), 'constant', constant_values=(255, 255))
     if rotated:
         resized_stroke = resized_stroke.transpose((1, 0, 2))
+    # TODO: Add support for random jitter in the rotation of the stroke.
     resized_stroke = np.roll(resized_stroke, stroke_x, axis=0)
     resized_stroke = np.roll(resized_stroke, stroke_y, axis=1)
     np.minimum(img, resized_stroke, out=img)
-    #img //= 255
-    # return img
-    # for i in range(resized_stroke.shape[0]):
-    #     for j in range(resized_stroke.shape[1]):
-    #         if rotated:
-    #             x = (stroke_x + j) % width
-    #             y = (stroke_y + i) % height
-    #             j = (resized_stroke.shape[1] - j - 1)
-    #         else:
-    #             x = (stroke_x + i) % width
-    #             y = (stroke_y + j) % height
-    #         value = min(img[x][y][0], resized_stroke[i][j][2])
-    #         img[x][y] = (value, value, value)
 
 
 def generate_stroke() -> Tuple[float, float, float]:
@@ -78,6 +65,11 @@ def generate_stroke() -> Tuple[float, float, float]:
 def compute_goodness(imgs: List[np.array], stroke: Tuple[float, float, float], pre_tone: List[float], rotated = False) -> float:
     """
     Check the goodness of the images passed in.
+    @param imgs: The images to check the goodness of.
+    @param stroke: The stroke to check the goodness of.
+    @param pre_tone: The tone of the images before the stroke was added.
+    @param rotated: Whether the stroke should be rotated.
+    @return: The goodness of the images.
     """
     tone_sum = 0
     for (i, img) in enumerate(imgs):
@@ -98,7 +90,11 @@ def copy_imgs(imgs: List[np.array]) -> List[np.array]:
 def add_stroke(imgs: List[np.array], candidates: int = 1000, rotated = False):
     """
     Generates stroke candidates, evaluates the best one, draws it to the images.
+    @param imgs: The images to draw the stroke to.
+    @param candidates: How many stroke candidates to generate.
+    @param rotated: Whether the stroke should be rotated.
     """
+    # TODO: add support for generating strokes in both directions.
     strokes = []
     pre_tone = [get_tone(img) for img in imgs]
     for _ in range(candidates):
@@ -116,6 +112,8 @@ def add_stroke(imgs: List[np.array], candidates: int = 1000, rotated = False):
 def get_tone(img: np.array) -> float:
     """
     Calculates average tone of a given image.
+    @param img: The image to calculate the tone of.
+    @return: The average tone of the image.
     """
     return np.mean(img) / 255
 
@@ -132,13 +130,6 @@ def reach_tone(imgs: List[np.array], tone: float):
             current_tone = get_tone(img)
             add_stroke(imgs[i:], 100, tone < 0.5)
             print(f"current_tone: {current_tone}")
-
-
-# img = create_texture(TEXTURE_SIZE)
-# img = draw_stroke(img, (0.9, 0.1, 0.5))
-# img = draw_stroke(img, (0.9, 0.13, 0.5))
-# cv2.imwrite("test.png", img)
-
 
 
 if __name__ == '__main__':
