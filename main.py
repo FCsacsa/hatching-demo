@@ -4,10 +4,14 @@ import random
 from typing import List, Tuple
 from scipy.ndimage import rotate
 from PIL import Image
+from matplotlib import pyplot as plt
 
 # How many tone levels should be generated?
 TONE_LEVELS = 6
 TONE_STEP = 1/TONE_LEVELS
+
+# Show a real time plot of the image as it is being generated?
+PLOT_IMAGE = True
 
 MIN_CANDIDATES = 100
 MAX_CANDIDATES = 1000
@@ -137,6 +141,11 @@ def reach_tone(imgs: List[np.array], tone: float):
             candidates = MIN_CANDIDATES + (MAX_CANDIDATES - MIN_CANDIDATES) * (current_tone - tone) / current_tone
             add_stroke(imgs[i:], int(candidates), tone < 0.5)
             print(f"current_tone: {current_tone}")
+
+            if PLOT_IMAGE:
+                plt.imshow(imgs[len(imgs) - 1], interpolation='nearest')
+                plt.draw()
+                plt.pause(0.01)
 
 
 if __name__ == '__main__':
