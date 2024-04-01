@@ -5,6 +5,7 @@ from typing import List, Tuple
 from scipy.ndimage import rotate
 from PIL import Image
 from matplotlib import pyplot as plt
+import time
 
 # How many tone levels should be generated?
 TONE_LEVELS = 6
@@ -134,6 +135,7 @@ def reach_tone(imgs: List[np.array], tone: float):
     @param imgs: The different levels for a given tone.
     @param tone: The desired tone of the images.
     """
+    last_draw = 0
     for (i, img) in enumerate(imgs):
         current_tone = get_tone(img)
         while current_tone > tone:
@@ -141,8 +143,9 @@ def reach_tone(imgs: List[np.array], tone: float):
             candidates = MIN_CANDIDATES + (MAX_CANDIDATES - MIN_CANDIDATES) * (current_tone - tone) / current_tone
             add_stroke(imgs[i:], int(candidates), tone < 0.5)
             print(f"current_tone: {current_tone}")
-
-            if PLOT_IMAGE:
+            now = time.time()
+            if PLOT_IMAGE and abs(now - last_draw) > 0.5:
+                last_draw = now
                 plt.imshow(imgs[len(imgs) - 1], interpolation='nearest')
                 plt.draw()
                 plt.pause(0.01)
